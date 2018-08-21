@@ -1,6 +1,6 @@
-# Microsoft SQL Server 
+# @css[gold](Microsoft) SQL Server 
 
-RDBMS by @css[gold](Microsoft)
+RDBMS by Microsoft
 
 ---
 
