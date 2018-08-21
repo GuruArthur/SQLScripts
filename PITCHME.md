@@ -2,13 +2,11 @@
 
 RDBMS by Microsoft
 
-@transition[zoom-in fade-out]
-@controls-layout : edges
 ---
 
 ### History
 
-- Sybase: 
+- Sybase 
 - later versions    
 - latest version
 
