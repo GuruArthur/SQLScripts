@@ -2,7 +2,8 @@
 
 RDBMS by Microsoft
 
-@transition[zoom-out fade-in]
+@transition[zoom-in fade-out]
+@controls-layout : edges
 ---
 
 ### History
