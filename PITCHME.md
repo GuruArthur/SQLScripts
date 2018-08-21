@@ -2,7 +2,7 @@
 
 RDBMS by Microsoft
 
-@transition[zoom-in fade-out]
+@transition[zoom-out fade-in]
 ---
 
 ### History
