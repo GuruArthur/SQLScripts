@@ -1,12 +1,25 @@
 # @color[orange](Microsoft) SQL Server 
 
-RDBMS by Microsoft
+RDBMS
 
 ---
 
-### History
+### Agenda
 
-- Sybase 
-- later versions    
-- latest version
+- Part I 
+- Part II    
+- Part III
 
+---
+
+### Part I
+
+---
+
+### Part II
+
+---
+
+### Part III
+
+---
