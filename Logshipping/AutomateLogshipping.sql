@@ -77,6 +77,18 @@ create procedure [LS].[DropDatabase]
 as
 begin
 	set nocount on
+
+	declare @Role varchar(100)
+
+	select @Role = [CharValue]
+	from [LS].[Config]
+	where [Name] = 'Role'
+	
+	/*This procedure is only executed on server with the secondary role*/
+	if @Role <> 'Secondary' or @Role is null
+	begin
+		return
+	end
 	
 	declare @Command nvarchar(max)
 	--Check if database exists
@@ -94,6 +106,40 @@ begin
 end
 go
 
+create procedure [LS].[RecoverDatabase]
+( @DatabaseName sysname)
+as
+begin
+	set nocount on
+	declare @Role varchar(100)
+
+	select @Role = [CharValue]
+	from [LS].[Config]
+	where [Name] = 'Role'
+	
+	/*This procedure is only executed on server with the secondary role*/
+	if @Role <> 'Secondary' or @Role is null
+	begin
+		return
+	end
+
+	declare @Command nvarchar(max)
+	--Check if database exists
+	if exists(select 1 from sys.databases where [name] = @DatabaseName)
+	begin
+		--check if db is part of logshipping
+		if exists(select 1 from sys.databases where [name] = @DatabaseName)
+		begin
+			print' remove logshipping'
+		end
+		
+		set @Command = 'restore database [' + @DatabaseName +'] with recovery'
+		exec(@command)
+	end
+end
+go
+
+
 create procedure [LS].[SyncDatabases]
 as
 begin
@@ -102,10 +148,16 @@ begin
 	declare @Secondary sysname
 	declare @Command nvarchar(max)
 	declare @Role varchar(100)
+	declare @LastSyncRun datetime
 
 	select @Secondary = [CharValue]
 	from [LS].[Config]
 	where [Name] = 'Secondary'
+
+
+	select  @LastSyncRun = [DateValue]
+	from [LS].[Config]
+	where [Name] = 'LastSyncRun'
 
 	select @Role = [CharValue]
 	from [LS].[Config]
@@ -156,12 +208,56 @@ begin
 	where not exists (select 1 from #SecondaryDatabases s
 	where p.[Name] = s.[Name])
 
-	/*are there new databases?*/
-	select * from 
+	insert into [LS].[Database]
+	( [ApplicationID]
+	, [Name]
+	, [CreateDate]
+	, [StatusID])
+	select
+	  a.[ApplicationID]
+	, p.[Name]
+	, p.[create_date]
+	, 0 
+	from 
+	#PrimaryDatabases p
+	cross join [LS].[application] a
+	where p.[name] like a.[DBPrefix] + '%'
+	and not exists (select 1 from #SecondaryDatabases s
+					where p.[Name] = s.[Name])
+
+
+	/*are there databases dropped?*/
+/*	select * from 
 	#SecondaryDatabases s
 	where not exists (select 1 from #PrimaryDatabases p
 	where s.[Name] = p.[Name])
+*/
+	update d
+	set [DropDate] = getdate()
+	, [Status] = 4
+	from [LS].[Database] d
+	left join #PrimaryDatabases p on d.[DatabaseName] = p.[Name]
+	where p.[name] is null
 
+	
+
+	/*check for databases with logshipping
+	only 2 database per application need to be logshipped*/
+
+
+	/*Start performing actions*/
+	while (select count(1) from [LS].[Action] where [ExecuteDate] is null)
+	begin
+		select top 1 
+		from [LS].[Action] 
+	
+
+
+		update a
+		set [ExecuteDate] = getdate()
+		from [LS].[Action]
+		where [ActionID] = @ActionID
+	end
 
 end
 go
@@ -172,14 +268,22 @@ values
 (1,'Role','Primary'),
 (2,'Secondary','Server2')
 
+insert into LSConfig
+(LSConfigID, [Name],[DateValue])
+values
+(3,'LastSyncRun','2019, sep 1')
 
 insert into LSApplication(Name,DBPrefix)
 values
 ('AppA','AppA_'),
 ('AppB','AppB_')
 
-
-
+insert into [LS].[ActionType]
+([Name])
+values
+('Add'),
+('Revover'),
+('Drop')
 -- get databases primary
 -- get databases secondary
 -- detect new databases
