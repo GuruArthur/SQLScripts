@@ -2,7 +2,9 @@ create database DBA
 go
 use DBA
 go
-
+/*
+https://docs.microsoft.com/en-us/sql/database-engine/log-shipping/configure-log-shipping-sql-server?view=sql-server-2017
+*/
 create schema [LS]
 go
 
